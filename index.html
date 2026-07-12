@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Habit Tracker Pro</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FBBF24">
+  <link rel="icon" href="assets/icons/favicon.ico">
+  <link rel="icon" href="assets/Images/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+  <div class="background" aria-hidden="true">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <img src="assets/Images/logo.png" alt="Habit Tracker">
+        <div>
+          <h2>Habit Tracker</h2>
+          <p>PRO</p>
+        </div>
+      </div>
+
+      <nav aria-label="Primary navigation">
+        <button class="nav-item active" type="button" data-page="home" data-tooltip="Home" aria-label="Home">
+          <i class="fa-solid fa-house"></i>
+          <span>Home</span>
+        </button>
+        <button class="nav-item" type="button" data-page="habits" data-tooltip="Habits" aria-label="Habits">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Habits</span>
+        </button>
+        <button class="nav-item" type="button" data-page="analytics" data-tooltip="Analytics" aria-label="Analytics">
+          <i class="fa-solid fa-chart-simple"></i>
+          <span>Analytics</span>
+        </button>
+        <button class="nav-item" type="button" data-page="profile" data-tooltip="Profile" aria-label="Profile">
+          <i class="fa-regular fa-user"></i>
+          <span>Profile</span>
+        </button>
+        <button class="nav-item" type="button" data-page="settings" data-tooltip="Settings" aria-label="Settings">
+          <i class="fa-solid fa-gear"></i>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="upgrade-card">
+        <i class="fa-solid fa-crown"></i>
+        <h3>Upgrade to Pro</h3>
+        <p>Unlock premium features and analytics.</p>
+        <button type="button">Upgrade</button>
+      </div>
+
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-menu" id="toggleBtn" type="button" aria-label="Toggle sidebar" aria-controls="sidebar" aria-expanded="true">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="habitSearch" type="text" placeholder="Search habits...">
+        </div>
+
+        <div class="date-time">
+          <h3 id="liveTime">--:--</h3>
+          <p id="liveDate">Loading date</p>
+        </div>
+
+        <div class="top-actions">
+          <div class="action-menu-wrap"><button class="icon-btn" id="notificationBtn" type="button" aria-label="Notifications" aria-expanded="false"><i class="fa-regular fa-bell"></i></button><div class="action-dropdown notification-dropdown" id="notificationMenu" role="menu" aria-label="Notification settings"><strong>Notifications</strong><label class="switch-line"><span>Enable notifications</span><input id="notificationsEnabled" type="checkbox" aria-label="Enable notifications"></label><label class="switch-line"><span>Browser notifications</span><input id="browserNotifications" type="checkbox" aria-label="Enable browser notifications"></label><label class="switch-line"><span>Sound effects</span><input id="notificationSound" type="checkbox" checked aria-label="Enable sound effects"></label><label class="volume-line" for="soundVolume"><span>Volume</span><input id="soundVolume" type="range" min="0" max="100" value="65" aria-label="Sound effects volume"><output id="soundVolumeValue" for="soundVolume">65%</output></label><button id="dailyReminderBtn" type="button" class="menu-button coming-soon" disabled><i class="fa-regular fa-clock"></i> Daily reminder <span>Coming soon</span></button></div></div>
+          <button class="icon-btn" id="themeToggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+            <i class="fa-regular fa-moon"></i>
+          </button>
+          <div class="action-menu-wrap"><button class="profile-mini" id="profileMenuBtn" type="button" aria-expanded="false">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%23213957'/%3E%3Ccircle cx='60' cy='45' r='22' fill='%23f5c79e'/%3E%3Cpath d='M22 108c5-25 20-38 38-38s33 13 38 38' fill='%238b5cf6'/%3E%3C/svg%3E" alt="Profile">
+            <div>
+              <h4 id="topProfileName">Guest</h4>
+              <small id="topProfileStatus">Set up profile</small>
+            </div>
+          </button><div class="action-dropdown profile-dropdown" id="profileMenu"><button type="button" data-goto="profile">Profile</button><button type="button" data-goto="settings">Settings</button><button id="logoutBtn" type="button">Logout</button></div></div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="home" class="page active-page">
+          <section class="welcome-banner">
+            <div class="welcome-left">
+              <span class="welcome-badge">Welcome Back</span>
+              <h1>Good Morning <span></span></h1>
+              <p>Stay consistent. Small habits create big success.</p>
+              <div class="hero-buttons">
+                <button class="primary-btn" type="button" data-goto="habits">Start Today's Habits</button>
+                <button class="secondary-btn" type="button" data-goto="analytics">Analytics</button>
+              </div>
+            </div>
+            <div class="welcome-right">
+              <div class="glass-circle">
+                <h2 id="bannerProgress">0%</h2>
+                <small>Today's Goal</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="stats-grid" aria-label="Habit stats">
+            <div class="stat-card">
+              <div class="stat-icon fire"><i class="fa-solid fa-fire"></i></div>
+              <div class="stat-info">
+                <h2>12</h2>
+                <p>Current Streak</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon trophy"><i class="fa-solid fa-trophy"></i></div>
+              <div class="stat-info">
+                <h2>31</h2>
+                <p>Longest Streak</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon check"><i class="fa-solid fa-list-check"></i></div>
+              <div class="stat-info">
+                <h2 id="todayHabitCount">0</h2>
+                <p>Today's Habits</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon star"><i class="fa-solid fa-star"></i></div>
+              <div class="stat-info">
+                <h2 id="completionRate">0%</h2>
+                <p>Completion</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="home-grid">
+            <article class="glass-card mission-card">
+              <div class="card-header">
+                <h3>Today's Mission</h3>
+                <span id="missionCount">0 habits</span>
+              </div>
+              <div class="habit-form">
+                <input id="habitInput" type="text" placeholder="Add a new habit" autocomplete="off">
+                <select id="habitCategory">
+
+                <option value="Study">📚 Study</option>
+
+                <option value="Fitness">🏋 Fitness</option>
+
+                <option value="Health">💧 Health</option>
+
+                <option value="Work">💼 Work</option>
+
+                <option value="Personal">🎭 Personal</option>
+
+                </select>
+                <button id="saveHabitBtn" class="primary-btn" type="button">Add</button>
+              </div>
+              <div id="habitList" class="habit-list"></div>
+            </article>
+
+            <article class="glass-card progress-card">
+              <div class="card-header">
+                <h3>Today's Progress</h3>
+                <span>Today</span>
+              </div>
+              <div class="progress-ring-box">
+                <svg class="progress-ring" width="170" height="170" viewBox="0 0 170 170" aria-hidden="true">
+                  <circle class="progress-track" cx="85" cy="85" r="70"></circle>
+                  <circle id="progressCircle" class="progress-circle-svg" cx="85" cy="85" r="70"></circle>
+                </svg>
+                <div class="progress-center">
+                  <h2 id="progressValue">0%</h2>
+                  <small>Completed</small>
+                </div>
+              </div>
+              <div class="progress-stats">
+                <div>
+                  <h4 id="completedHabits">0</h4>
+                  <span>Completed</span>
+                </div>
+                <div>
+                  <h4 id="remainingHabits">0</h4>
+                  <span>Remaining</span>
+                </div>
+              </div>
+              <p class="progress-message">Start completing your habits.</p>
+            </article>
+
+            <article class="glass-card weekly-card">
+              <div class="card-header">
+                <h3>Weekly Progress</h3>
+                <span>Jul 1 - Jul 7</span>
+              </div>
+              <div class="progress-bars" id="weeklyProgress"></div>
+            </article>
+
+            <article class="glass-card activity-card">
+              <div class="card-header">
+                <h3>Recent Activity</h3>
+                <span>Today</span>
+              </div>
+              <div id="activityList" class="activity-list"></div>
+            </article>
+          </section>
+        </section>
+
+        <section id="habits" class="page">
+
+    <!-- Page Header -->
+
+    <section class="habit-header glass-card">
+
+        <div>
+
+            <h2>📋 Habit Manager</h2>
+
+            <p>Manage, organize and track all your habits.</p>
+
+        </div>
+
+        <button class="primary-btn" id="newHabitBtn" type="button">
+
+            + New Habit
+
+        </button>
+
+    </section>
+
+
+
+    <!-- Statistics -->
+
+    <section class="habit-stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-icon fire">
+
+                <i class="fa-solid fa-list-check"></i>
+
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="habitTotal">0</h2>
+
+                <p>Total Habits</p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon check">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="habitCompleted">0</h2>
+
+                <p>Completed</p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon trophy">
+
+                <i class="fa-solid fa-hourglass-half"></i>
+
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="habitPending">0</h2>
+
+                <p>Pending</p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon star">
+
+                <i class="fa-solid fa-chart-line"></i>
+
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="habitPercent">0%</h2>
+
+                <p>Completion</p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- Search -->
+
+    <section class="glass-card habit-search-box">
+
+        <input
+
+            type="text"
+
+            id="habitSearchPage"
+
+            placeholder="🔍 Search habits">
+
+    </section>
+
+
+
+    <!-- Habit Cards -->
+
+    <section
+
+        class="habit-card-container"
+
+        id="habitCardContainer">
+
+    </section>
+
+
+
+    <!-- Monthly Tracker -->
+
+    <section class="glass-card">
+
+        <div class="card-header">
+
+            <h3>📅 30-Day Habit Tracker</h3>
+
+            <span>This Month</span>
+
+        </div>
+
+        <div id="monthlyTracker">
+
+        </div>
+
+    </section>
+
+
+
+    <!-- Weekly Progress -->
+
+    <section class="glass-card">
+
+        <div class="card-header">
+
+            <h3>📈 Weekly Progress</h3>
+
+            <span>Current Week</span>
+
+        </div>
+
+        <canvas id="habitChart"></canvas>
+
+    </section>
+
+
+
+    <!-- Notes -->
+
+    <section class="glass-card">
+
+        <div class="card-header">
+
+            <h3>📝 Daily Notes</h3>
+
+        </div>
+
+        <textarea
+
+            id="habitNotes"
+
+            placeholder="Write today's notes...">
+
+        </textarea>
+
+    </section>
+
+</section>
+
+        <section id="analytics" class="page">
+
+    <div class="analytics-header glass-card">
+
+        <h2>📊 Analytics Dashboard</h2>
+
+        <p>Track your productivity and habit performance.</p>
+
+    </div>
+
+    <section class="analytics-cards">
+
+        <div class="stat-card">
+
+            <div class="stat-icon check">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="analyticsCompletionRate">0%</h2>
+
+                <p>Completion Rate</p>
+
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon fire">
+                <i class="fa-solid fa-fire"></i>
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="analyticsStreak">0</h2>
+
+                <p>Current Streak</p>
+
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon trophy">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="analyticsBest">0</h2>
+
+                <p>Best Streak</p>
+
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <div class="stat-icon star">
+                <i class="fa-solid fa-bullseye"></i>
+            </div>
+
+            <div class="stat-info">
+
+                <h2 id="analyticsHabits">0</h2>
+
+                <p>Total Habits</p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="glass-card">
+
+        <div class="card-header">
+
+            <h3>📈 Weekly Completion</h3>
+
+        </div>
+
+        <canvas id="analyticsChart"></canvas>
+
+    </section>
+    <section class="analytics-grid">
+      <article class="glass-card analytics-pie"><div class="card-header"><h3>Category Distribution</h3><span>Active habits</span></div><canvas id="categoryChart"></canvas></article>
+      <article class="glass-card"><div class="card-header"><h3>Monthly Completion</h3><span>Last 4 weeks</span></div><canvas id="monthlyChart"></canvas></article>
+    </section>
+
+</section>
+
+        <section id="profile" class="page">
+          <section class="profile-hero glass-card">
+            <div class="profile-avatar-wrap"><button id="profileAvatarButton" class="avatar-trigger" type="button" aria-label="Choose profile picture"><img id="profileAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%23213957'/%3E%3Ccircle cx='60' cy='45' r='22' fill='%23f5c79e'/%3E%3Cpath d='M22 108c5-25 20-38 38-38s33 13 38 38' fill='%238b5cf6'/%3E%3C/svg%3E" alt="Profile image"><span class="avatar-camera"><i class="fa-solid fa-camera" aria-hidden="true"></i></span></button></div>
+            <form class="profile-summary" id="profileForm"><span class="eyebrow">Your profile</span><div class="profile-fields"><input id="profileName" placeholder="Name" required><input id="profileAge" type="number" min="1" max="120" placeholder="Age (optional)"><input id="profileEmail" type="email" placeholder="Email" required></div><label class="upload-label">Choose photo <input id="profileImageInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label><p id="photoPreviewStatus" class="photo-preview-status" aria-live="polite">No new photo selected.</p><div class="form-actions"><button class="primary-btn" type="submit">Save</button><button class="secondary-btn" id="cancelProfileBtn" type="button">Cancel</button><button class="text-danger-btn" id="removePhotoBtn" type="button">Remove Photo</button></div></form>
+            <div class="profile-level"><span>Current level</span><strong id="profileLevel">0</strong><small id="profileXp">0 XP</small></div>
+          </section>
+          <section class="profile-stats" aria-label="Profile statistics">
+            <article class="stat-card"><div class="stat-icon fire"><i class="fa-solid fa-fire"></i></div><div class="stat-info"><h2 id="profileStreak">0</h2><p>Current Streak</p></div></article>
+            <article class="stat-card"><div class="stat-icon trophy"><i class="fa-solid fa-trophy"></i></div><div class="stat-info"><h2 id="profileBest">0</h2><p>Longest Streak</p></div></article>
+            <article class="stat-card"><div class="stat-icon check"><i class="fa-solid fa-circle-check"></i></div><div class="stat-info"><h2 id="profileCompleted">0</h2><p>Habits Completed</p></div></article>
+            <article class="stat-card"><div class="stat-icon star"><i class="fa-solid fa-chart-line"></i></div><div class="stat-info"><h2 id="profileCompletion">0%</h2><p>Today's Completion</p></div></article>
+          </section>
+          <section class="profile-grid">
+            <article class="glass-card achievement-card"><div class="card-header"><h3>Achievements</h3><span>3 unlocked</span></div><div class="achievement-list"><div><i class="fa-solid fa-bolt"></i><span><strong>First Spark</strong><small>Complete your first habit</small></span></div><div><i class="fa-solid fa-fire"></i><span><strong>On a Roll</strong><small>Reach a 7-day streak</small></span></div><div><i class="fa-solid fa-medal"></i><span><strong>Steady Hands</strong><small>Complete 25 habits</small></span></div></div></article>
+            <article class="glass-card profile-focus"><div class="card-header"><h3>Consistency focus</h3><span>This week</span></div><strong id="profileTotal">0</strong><p>active habits are helping you build momentum. Keep the next action small and clear.</p><button class="secondary-btn" type="button" data-goto="habits">View habits</button></article>
+          </section>
+        </section>
+
+        <section id="settings" class="page">
+          <section class="page-intro"><span class="eyebrow">Workspace</span><h2>Settings</h2><p>Personalize your focus environment and keep your data within reach.</p></section>
+          <section class="settings-grid">
+            <article class="glass-card setting-card"><div class="setting-icon"><i class="fa-solid fa-moon"></i></div><div><h3>Appearance</h3><p>Use the theme switch in the top bar to change the dashboard appearance.</p></div><button class="secondary-btn" type="button" data-theme-action>Toggle theme</button></article>
+            <article class="glass-card setting-card"><div class="setting-icon"><i class="fa-regular fa-bell"></i></div><div><h3>Notifications</h3><p>Manage reminders, sound and browser permission.</p></div><button class="secondary-btn" id="notificationSettingsBtn" type="button">Configure</button></article>
+            <article class="glass-card setting-card"><div class="setting-icon"><i class="fa-solid fa-file-export"></i></div><div><h3>Export</h3><p>Download your local habit data.</p></div><div class="export-actions"><button data-export="csv" type="button">CSV</button><button data-export="json" type="button">JSON</button><button data-export="pdf" type="button">PDF</button></div></article>
+            <article class="glass-card setting-card"><div class="setting-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div><div><h3>Backup &amp; restore</h3><p>Cloud backup is being prepared.</p></div><button class="secondary-btn coming-soon" type="button">Coming soon</button></article>
+          </section>
+          <article class="glass-card danger-zone"><div><span class="eyebrow">Account safety</span><h3>Danger zone</h3><p>Manage account-level actions with care. Your habit data remains private to this browser.</p></div><button class="danger-btn" type="button">Delete account</button></article>
+        </section>
+      </div>
+    </main>
+  </div>
+<!-- ==========================================
+     EDIT HABIT MODAL
+========================================== -->
+
+<div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h2 id="editModalTitle">Edit Habit</h2>
+
+            <button id="closeModalBtn" type="button" aria-label="Close edit habit dialog">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+        <div class="modal-body">
+
+            <label>Habit Name</label>
+
+            <input
+                type="text"
+                id="editHabitName">
+
+            <label>Category</label>
+
+            <select id="editCategory">
+
+                <option>Fitness</option>
+                <option>Study</option>
+                <option>Health</option>
+                <option>Work</option>
+                <option>Personal</option>
+
+            </select>
+
+            <label>Priority</label>
+
+            <select id="editPriority">
+
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+
+            </select>
+
+            <label>Time</label>
+
+            <input
+                type="time"
+                id="editTime">
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button
+                class="secondary-btn"
+                id="cancelEdit">
+
+                Cancel
+
+            </button>
+
+            <button
+                class="primary-btn"
+                id="saveEdit">
+
+                Save
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+<div id="onboarding" class="onboarding" aria-live="polite">
+  <section class="onboarding-panel splash-step" data-onboarding-step="splash"><img src="assets/Images/logo.png" alt=""><h1>Habit Tracker <span>Pro</span></h1><div class="loading-line"><span></span></div><p>Building your focus space</p></section>
+  <section class="onboarding-panel" data-onboarding-step="welcome"><img src="assets/Images/logo.png" alt=""><span class="eyebrow">One day at a time</span><h1>Habit Tracker Pro</h1><p>Small, deliberate actions become lasting progress.</p><button id="getStartedBtn" class="primary-btn" type="button">Get Started</button></section>
+  <section class="onboarding-panel" data-onboarding-step="setup"><img id="setupPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%23213957'/%3E%3Ccircle cx='60' cy='45' r='22' fill='%23f5c79e'/%3E%3Cpath d='M22 108c5-25 20-38 38-38s33 13 38 38' fill='%238b5cf6'/%3E%3C/svg%3E" alt="Profile preview"><h1>Create your profile</h1><p>A few details make your dashboard feel personal.</p><form id="setupForm" class="setup-form"><label class="upload-label">Upload photo <input id="setupImageInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label><input id="setupName" placeholder="Your name" required><input id="setupAge" type="number" min="1" max="120" placeholder="Age (optional)"><input id="setupEmail" type="email" placeholder="Email address" required><p class="form-error" id="setupError"></p><button class="primary-btn" type="submit">Enter dashboard</button></form></section>
+</div>
+<div class="modal-overlay" id="trackerModal" role="dialog" aria-modal="true"><div class="modal-box"><div class="modal-header"><h2 id="trackerModalTitle">Daily summary</h2><button id="closeTrackerModal" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div><div id="trackerModalContent" class="tracker-summary"></div></div></div>
+
+<div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

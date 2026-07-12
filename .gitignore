@@ -1,0 +1,29 @@
+# Logs
+*.log
+
+# Node modules (future Electron/Firebase)
+node_modules/
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+
+# Firebase
+firebase-debug.log
+
+# Build folders
+dist/
+build/
+
+# Cache
+.cache/
