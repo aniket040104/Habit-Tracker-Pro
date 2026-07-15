@@ -15,15 +15,19 @@ window.googleLogin = async function () {
 
     const user = result.user;
 
+    console.log("Saving user...");
+
     localStorage.setItem(
-      "habitTrackerUser",
-      JSON.stringify({
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        photo: user.photoURL
-      })
-    );
+    "habitTrackerUser",
+    JSON.stringify({
+    uid: user.uid,
+    name: user.displayName,
+    email: user.email,
+    photo: user.photoURL
+   })
+  );
+
+console.log(localStorage.getItem("habitTrackerUser"));
 
     console.log("✅ Login Successful");
     console.log(user);
