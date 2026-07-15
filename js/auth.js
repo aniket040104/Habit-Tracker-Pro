@@ -1,3 +1,14 @@
+import { auth } from "./firebase.js";
+
+import {
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+const provider = new GoogleAuthProvider();
+
+console.log("auth.js loaded");
+
 window.googleLogin = async function () {
   try {
     const result = await signInWithPopup(auth, provider);
