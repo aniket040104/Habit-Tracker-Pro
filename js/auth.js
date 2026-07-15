@@ -11,28 +11,34 @@ console.log("auth.js loaded");
 
 window.googleLogin = async function () {
   try {
+    console.log("STEP 1");
+
     const result = await signInWithPopup(auth, provider);
+
+    console.log("STEP 2");
 
     const user = result.user;
 
-    console.log("Saving user...");
+    console.log("STEP 3", user);
 
     localStorage.setItem(
-    "habitTrackerUser",
-    JSON.stringify({
-    uid: user.uid,
-    name: user.displayName,
-    email: user.email,
-    photo: user.photoURL
-   })
-  );
+      "habitTrackerUser",
+      JSON.stringify({
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL
+      })
+    );
 
-console.log(localStorage.getItem("habitTrackerUser"));
+    console.log("STEP 4");
 
-    console.log("✅ Login Successful");
-    console.log(user);
+    console.log(localStorage.getItem("habitTrackerUser"));
 
-    location.reload();
+    console.log("STEP 5");
+
+    // TEMPORARILY DISABLE THIS
+    // location.reload();
 
   } catch (error) {
     console.error(error);
