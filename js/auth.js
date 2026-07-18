@@ -22,23 +22,22 @@ window.googleLogin = async function () {
     console.log("STEP 3", user);
 
     localStorage.setItem(
-      "habitTrackerUser",
+      "habit-tracker-pro:profile",
       JSON.stringify({
         uid: user.uid,
         name: user.displayName,
         email: user.email,
-        photo: user.photoURL
+        image: user.photoURL
       })
     );
 
     console.log("STEP 4");
 
-    console.log(localStorage.getItem("habitTrackerUser"));
+    console.log(localStorage.getItem("habit-tracker-pro:profile"));
 
     console.log("STEP 5");
 
-    // TEMPORARILY DISABLE THIS
-    // location.reload();
+    location.reload();
 
   } catch (error) {
     console.error(error);

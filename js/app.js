@@ -22,10 +22,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const read = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch { return fallback; } };
   const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
   const makeId = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  function migrateLegacyProfile() {
+    const legacy = read("habitTrackerUser", null);
+    if (!legacy || typeof legacy !== "object") return null;
+    const migrated = {
+      uid: legacy.uid,
+      name: legacy.name,
+      email: legacy.email,
+      image: legacy.photo || legacy.image || ""
+    };
+    write(KEYS.profile, migrated);
+    localStorage.removeItem("habitTrackerUser");
+    return migrated;
+  }
   function normalize(h) { if (!h?.name?.trim()) return null; const history = h.history && typeof h.history === "object" ? h.history : {}; if (h.done && !Object.keys(history).length) history[todayKey()] = true; return { id: h.id || makeId(), name: h.name.trim(), category: categories.includes(h.category) ? h.category : "Study", priority: ["High", "Medium", "Low"].includes(h.priority) ? h.priority : "High", time: h.time || "Anytime", history }; }
   function loadHabits() { const data = read(KEYS.habits, read("habits", [])); return Array.isArray(data) ? data.map(normalize).filter(Boolean) : []; }
   function loadDailyProgress() { const saved = read(KEYS.dailyProgress, {}); if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {}; return Object.fromEntries(Object.entries(saved).filter(([date, value]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && value && Number.isFinite(Number(value.total)) && Number.isFinite(Number(value.completed))).map(([date, value]) => [date, { total: Math.max(0, Number(value.total)), completed: Math.max(0, Number(value.completed)) }])); }
-  let habits = loadHabits(), profile = read(KEYS.profile, null), dailyProgress = loadDailyProgress(), settings = { enabled: false, browser: false, sound: true, volume: 65, unlocked: [], ...read(KEYS.settings, {}) };
+  let habits = loadHabits(), profile = read(KEYS.profile, null) || migrateLegacyProfile(), dailyProgress = loadDailyProgress(), settings = { enabled: false, browser: false, sound: true, volume: 65, unlocked: [], ...read(KEYS.settings, {}) };
   const savedVolume = Number(settings.volume);
   settings.volume = Number.isFinite(savedVolume) ? Math.max(0, Math.min(100, savedVolume)) : 65;
   settings.unlocked = Array.isArray(settings.unlocked) ? settings.unlocked : [];
