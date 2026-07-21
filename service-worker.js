@@ -3,8 +3,10 @@ const CACHE_NAME = "habit-tracker-v1";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css",
-  "./script.js",
+  "./css/style.css",
+  "./js/firebase.js",
+  "./js/auth.js",
+  "./js/app.js",
   "./manifest.json",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",

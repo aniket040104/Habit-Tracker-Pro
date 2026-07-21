@@ -1,3 +1,8 @@
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { googleLogin } from "./auth.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
 document.addEventListener("DOMContentLoaded", () => {
   const KEYS = { habits: "habit-tracker-pro:habits", notes: "habit-tracker-pro:notes", profile: "habit-tracker-pro:profile", settings: "habit-tracker-pro:settings", dailyProgress: "habit-tracker-pro:daily-progress" };
   const categories = ["Study", "Fitness", "Health", "Work", "Personal"];
@@ -11,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     weekly: $("#weeklyProgress"), activity: $("#activityList"), tracker: $("#monthlyTracker"), notes: $("#habitNotes"), progressCircle: $("#progressCircle"),
     editModal: $("#editModal"), editName: $("#editHabitName"), editCategory: $("#editCategory"), editPriority: $("#editPriority"), editTime: $("#editTime"),
     onboarding: $("#onboarding"), setupForm: $("#setupForm"), setupName: $("#setupName"), setupAge: $("#setupAge"), setupEmail: $("#setupEmail"), setupImage: $("#setupImageInput"), setupPreview: $("#setupPreview"), setupError: $("#setupError"),
+    authForm: $("#authForm"), authTitle: $("#authTitle"), authDesc: $("#authDesc"), authEmail: $("#authEmail"), authPassword: $("#authPassword"), authError: $("#authError"), authSubmit: $("#authSubmit"), authGoogleBtn: $("#authGoogleBtn"), authCreateBtn: $("#authCreateBtn"), authForgotBtn: $("#authForgotBtn"), welcomeGetStartedBtn: $("#welcomeGetStartedBtn"), welcomeGoogleBtn: $("#welcomeGoogleBtn"),
     profileForm: $("#profileForm"), profileName: $("#profileName"), profileAge: $("#profileAge"), profileEmail: $("#profileEmail"), profileImage: $("#profileImageInput"), profileAvatar: $("#profileAvatar"), profileAvatarButton: $("#profileAvatarButton"), photoStatus: $("#photoPreviewStatus"), removePhoto: $("#removePhotoBtn"), greeting: $(".welcome-left h1"),
     notificationBtn: $("#notificationBtn"), notificationMenu: $("#notificationMenu"), notificationEnabled: $("#notificationsEnabled"), browserNotifications: $("#browserNotifications"), notificationSound: $("#notificationSound"), soundVolume: $("#soundVolume"), soundVolumeValue: $("#soundVolumeValue"), toastRegion: $("#toastRegion"), profileMenuBtn: $("#profileMenuBtn"), profileMenu: $("#profileMenu"), topName: $("#topProfileName"), topStatus: $("#topProfileStatus"),
     trackerModal: $("#trackerModal"), trackerTitle: $("#trackerModalTitle"), trackerContent: $("#trackerModalContent"), categoryChart: $("#categoryChart"), analyticsChart: $("#analyticsChart"), monthlyChart: $("#monthlyChart")
@@ -22,6 +28,107 @@ document.addEventListener("DOMContentLoaded", () => {
   const read = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch { return fallback; } };
   const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
   const makeId = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const AUTH_MODE = { LOGIN: "login", REGISTER: "register" };
+  let authMode = AUTH_MODE.LOGIN;
+  let authStateResolved = false;
+  let authActionInProgress = false;
+  const setAuthError = (message = "") => { if (el.authError) el.authError.textContent = message; };
+  const setAuthControlsEnabled = (enabled) => {
+    [el.authGoogleBtn, el.welcomeGoogleBtn, el.authSubmit, el.authEmail, el.authPassword, el.authCreateBtn, el.authForgotBtn].forEach((button) => {
+      if (button) button.disabled = !enabled;
+    });
+    if (el.authSubmit) {
+      el.authSubmit.textContent = enabled ? (authMode === AUTH_MODE.REGISTER ? "Create account" : "Login") : (authMode === AUTH_MODE.REGISTER ? "Creating..." : "Logging in...");
+    }
+    if (el.authGoogleBtn) el.authGoogleBtn.textContent = enabled ? "Continue with Google" : "Please wait...";
+    if (el.welcomeGoogleBtn) el.welcomeGoogleBtn.textContent = enabled ? "Continue with Google" : "Please wait...";
+  };
+  const handleAuthFailure = (error) => {
+    if (!error) return;
+    if (error.code === "auth/popup-blocked") {
+      showToast("error", "Popup blocked. Allow popups for this site and try again.");
+      setAuthError("Popup blocked. Please allow popups.");
+      return;
+    }
+    if (error.code === "auth/cancelled-popup-request" || error.code === "auth/popup-closed-by-user") {
+      setAuthError("Google sign-in was cancelled.");
+      return;
+    }
+    setAuthError(error.message || "Authentication failed.");
+    console.error("Authentication error:", error);
+  };
+  const performGoogleLogin = async () => {
+    if (authActionInProgress) return;
+    authActionInProgress = true;
+    setAuthError("");
+    setAuthControlsEnabled(false);
+
+    try {
+      await googleLogin();
+    } catch (error) {
+      handleAuthFailure(error);
+    } finally {
+      authActionInProgress = false;
+      setAuthControlsEnabled(true);
+    }
+  };
+  const setAuthMode = (mode) => {
+    authMode = mode;
+    if (!el.authSubmit || !el.authCreateBtn || !el.authTitle || !el.authDesc) return;
+    if (mode === AUTH_MODE.REGISTER) {
+      el.authTitle.textContent = "Create an account";
+      el.authDesc.textContent = "Sign up with email and password to begin.";
+      el.authSubmit.textContent = "Create account";
+      el.authCreateBtn.textContent = "Back to login";
+    } else {
+      el.authTitle.textContent = "Sign in to Habit Tracker Pro";
+      el.authDesc.textContent = "Use Google or your email and password.";
+      el.authSubmit.textContent = "Login";
+      el.authCreateBtn.textContent = "Create new account";
+    }
+    setAuthError("");
+  };
+  const fetchProfile = async (uid) => {
+    try {
+      const profileRef = doc(db, "users", uid);
+      const profileSnap = await getDoc(profileRef);
+      return profileSnap.exists() ? profileSnap.data() : null;
+    } catch (error) {
+      console.warn("Failed to fetch profile:", error);
+      return null;
+    }
+  };
+  const saveProfileToFirestore = async (uid, profileData) => {
+    if (!uid) throw new Error("Missing authenticated user ID.");
+    if (!profileData || typeof profileData !== "object") throw new Error("Invalid profile data.");
+    const profileRef = doc(db, "users", uid);
+    await setDoc(profileRef, { ...profileData, uid }, { merge: true });
+  };
+  const showAuthScreen = () => {
+    setAuthMode(AUTH_MODE.LOGIN);
+    showOnboarding("auth");
+  };
+  const handleAuthStateChange = async (user) => {
+    authStateResolved = true;
+    if (!user) {
+      profile = null;
+      localStorage.removeItem(KEYS.profile);
+      el.onboarding.classList.remove("hide");
+      showOnboarding("welcome");
+      return;
+    }
+    const remoteProfile = await fetchProfile(user.uid);
+    if (remoteProfile) {
+      profile = { uid: user.uid, ...remoteProfile };
+      write(KEYS.profile, profile);
+      el.onboarding.classList.add("hide");
+      render();
+      return;
+    }
+    profile = { uid: user.uid, email: user.email || "" };
+    write(KEYS.profile, profile);
+    showOnboarding("profile");
+  };
   function migrateLegacyProfile() {
     const legacy = read("habitTrackerUser", null);
     if (!legacy || typeof legacy !== "object") return null;
@@ -89,7 +196,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeMenus(){[el.notificationMenu,el.profileMenu].forEach(m=>m?.classList.remove("show"));[el.notificationBtn,el.profileMenuBtn].forEach(b=>b?.setAttribute("aria-expanded","false"));}
   function updateClock(){const n=new Date(), currentDate = todayKey(); updateText("#liveTime",n.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}));updateText("#liveDate",n.toLocaleDateString([],{weekday:"long",day:"numeric",month:"long",year:"numeric"}));syncGreeting(); if (activeDate && activeDate !== currentDate) { activeDate = currentDate; saveDailyProgress(); render(); } else if (!activeDate) activeDate = currentDate;}
   function showOnboarding(step){el.onboarding.classList.remove("hide");$$("[data-onboarding-step]").forEach(s=>s.classList.toggle("active",s.dataset.onboardingStep===step));}
-  function startFlow(){if(profile){el.onboarding.classList.add("hide");return;}showOnboarding("splash");setTimeout(()=>showOnboarding("welcome"),2200);}
+  function startFlow(){
+    showOnboarding("splash");
+    setTimeout(() => {
+      if (!authStateResolved) showOnboarding("welcome");
+    }, 2200);
+  }
   function readImage(input, callback){const file=input.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>callback(reader.result);reader.readAsDataURL(file);}
   function setPhotoStatus(message, type = "") { if (!el.photoStatus) return; el.photoStatus.textContent = message; el.photoStatus.className = `photo-preview-status${type ? ` ${type}` : ""}`; }
   function previewProfileImage() { const file = el.profileImage?.files?.[0]; if (!file) return; const allowed = ["image/jpeg", "image/png", "image/webp"]; if (!allowed.includes(file.type) || !/\.(jpe?g|png|webp)$/i.test(file.name)) { el.profileImage.value = ""; setPhotoStatus("Choose a JPG, JPEG, PNG, or WEBP image.", "is-error"); return; } if (file.size > 5 * 1024 * 1024) { el.profileImage.value = ""; setPhotoStatus("Image must be 5 MB or smaller.", "is-error"); return; } const reader = new FileReader(); reader.onload = () => { pendingProfileImage = reader.result; updateAvatars(pendingProfileImage, true); setPhotoStatus(`Preview ready: ${file.name}. Save to apply it.`, "is-preview"); }; reader.onerror = () => setPhotoStatus("The selected image could not be read.", "is-error"); reader.readAsDataURL(file); }
@@ -97,12 +209,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function removeProfilePhoto() { if (profile) { delete profile.image; write(KEYS.profile, profile); } pendingProfileImage = null; if (el.profileImage) el.profileImage.value = ""; syncProfile(true); setPhotoStatus("Photo removed. The default avatar is now active.", "is-preview"); }
   function exportData(type){const payload={profile,habits,exportedAt:new Date().toISOString()};if(type==="pdf"){showToast("error", "PDF export is coming soon. JSON and CSV are available today.");return;}const content=type==="csv"?["Habit,Category,Date,Completed",...habits.flatMap(h=>Object.entries(h.history).map(([d,v])=>`\"${h.name.replaceAll('"','""')}\",${h.category},${d},${v}`))].join("\n"):JSON.stringify(payload,null,2);const link=document.createElement("a");link.href=URL.createObjectURL(new Blob([content],{type:type==="csv"?"text/csv":"application/json"}));link.download=`habit-tracker-${todayKey()}.${type}`;link.click();URL.revokeObjectURL(link.href);showToast("success", "Export Complete");}
   function openTracker(date){const p=progress(date),complete=habits.filter(h=>done(h,date)).map(h=>h.name),missed=habits.filter(h=>!done(h,date)).map(h=>h.name);el.trackerTitle.textContent=new Date(`${date}T12:00:00`).toLocaleDateString([],{weekday:"long",day:"numeric",month:"long"});el.trackerContent.innerHTML=`<p><strong>Completion:</strong> ${p.percentage}% (${p.completed}/${p.total})</p><p><strong>Completed habits</strong></p><ul>${complete.length?complete.map(n=>`<li>${n}</li>`).join(""):"<li>None yet</li>"}</ul><p><strong>Missed habits</strong></p><ul>${missed.length?missed.map(n=>`<li>${n}</li>`).join(""):"<li>None</li>"}</ul>`;el.trackerModal.classList.add("show");}
-  function bind(){if(eventsBound)return;eventsBound=true;el.toggle?.addEventListener("click",()=>{if(mobile()){const open=!el.sidebar.classList.contains("is-open");el.sidebar.classList.toggle("is-open",open);el.backdrop.classList.toggle("visible",open);}else el.sidebar.classList.toggle("collapsed");});el.backdrop?.addEventListener("click",closeSidebar);el.theme?.addEventListener("click",()=>{document.body.classList.toggle("light-theme");});$$('[data-theme-action]').forEach(b=>b.addEventListener("click",()=>el.theme.click()));el.nav.forEach(n=>n.addEventListener("click",()=>showPage(n.dataset.page)));$$('[data-goto]').forEach(n=>n.addEventListener("click",()=>showPage(n.dataset.goto)));el.saveHabit?.addEventListener("click",addHabit);el.habitInput?.addEventListener("keydown",e=>{if(e.key==="Enter")addHabit();});el.homeSearch?.addEventListener("input",renderHome);el.managerSearch?.addEventListener("input",renderManager);[el.homeList,el.managerList].forEach(c=>{c?.addEventListener("click",handleAction);c?.addEventListener("change",e=>{const input=e.target.closest('[data-action="toggle"]');if(input)toggleHabit(Number(input.dataset.index),input.checked);});});el.newHabit?.addEventListener("click",()=>{showPage("home");el.habitInput.focus();});$("#closeModalBtn")?.addEventListener("click",closeEdit);$("#cancelEdit")?.addEventListener("click",closeEdit);$("#saveEdit")?.addEventListener("click",saveEdit);el.editModal?.addEventListener("click",e=>{if(e.target===el.editModal)closeEdit();});el.tracker?.addEventListener("click",e=>{const d=e.target.closest("[data-date]")?.dataset.date;if(d)openTracker(d);});$("#closeTrackerModal")?.addEventListener("click",()=>el.trackerModal.classList.remove("show"));el.trackerModal?.addEventListener("click",e=>{if(e.target===el.trackerModal)el.trackerModal.classList.remove("show");});document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeEdit();el.trackerModal?.classList.remove("show");closeMenus();}});if(el.notes)el.notes.value=read(KEYS.notes,"");el.notes?.addEventListener("input",()=>write(KEYS.notes,el.notes.value));el.notificationBtn?.addEventListener("click",e=>{e.stopPropagation();el.notificationMenu.classList.toggle("show");el.notificationBtn.setAttribute("aria-expanded",String(el.notificationMenu.classList.contains("show")));});el.profileMenuBtn?.addEventListener("click",e=>{e.stopPropagation();el.profileMenu.classList.toggle("show");el.profileMenuBtn.setAttribute("aria-expanded",String(el.profileMenu.classList.contains("show")));});document.addEventListener("click",e=>{if(!e.target.closest(".action-menu-wrap"))closeMenus();});$("#notificationSettingsBtn")?.addEventListener("click",()=>el.notificationBtn.click());$$('[data-export]').forEach(b=>b.addEventListener("click",()=>exportData(b.dataset.export)));$$('.coming-soon').forEach(b=>b.addEventListener("click",()=>alert("Coming soon")));$("#getStartedBtn")?.addEventListener("click",()=>showOnboarding("setup"));el.setupImage?.addEventListener("change",()=>readImage(el.setupImage,v=>{setupImageData=v;el.setupPreview.src=v;}));el.setupForm?.addEventListener("submit",e=>{e.preventDefault();if(!el.setupName.value.trim()||!el.setupEmail.validity.valid){el.setupError.textContent="Name and a valid email are required.";return;}profile={name:el.setupName.value.trim(),age:el.setupAge.value,email:el.setupEmail.value.trim(),image:setupImageData};write(KEYS.profile,profile);el.onboarding.classList.add("hide");render();});$("#logoutBtn")?.addEventListener("click",()=>{if(profile){localStorage.removeItem(KEYS.profile);profile=null;}closeMenus();showOnboarding("welcome");render();});window.addEventListener("resize",()=>{if(!mobile())closeSidebar();});}
+  function bind(){if(eventsBound)return;eventsBound=true;el.toggle?.addEventListener("click",()=>{if(mobile()){const open=!el.sidebar.classList.contains("is-open");el.sidebar.classList.toggle("is-open",open);el.backdrop.classList.toggle("visible",open);}else el.sidebar.classList.toggle("collapsed");});el.backdrop?.addEventListener("click",closeSidebar);el.theme?.addEventListener("click",()=>{document.body.classList.toggle("light-theme");});$$('[data-theme-action]').forEach(b=>b.addEventListener("click",()=>el.theme.click()));el.nav.forEach(n=>n.addEventListener("click",()=>showPage(n.dataset.page)));$$('[data-goto]').forEach(n=>n.addEventListener("click",()=>showPage(n.dataset.goto)));el.saveHabit?.addEventListener("click",addHabit);el.habitInput?.addEventListener("keydown",e=>{if(e.key==="Enter")addHabit();});el.homeSearch?.addEventListener("input",renderHome);el.managerSearch?.addEventListener("input",renderManager);[el.homeList,el.managerList].forEach(c=>{c?.addEventListener("click",handleAction);c?.addEventListener("change",e=>{const input=e.target.closest('[data-action="toggle"]');if(input)toggleHabit(Number(input.dataset.index),input.checked);});});el.newHabit?.addEventListener("click",()=>{showPage("home");el.habitInput.focus();});$("#closeModalBtn")?.addEventListener("click",closeEdit);$("#cancelEdit")?.addEventListener("click",closeEdit);$("#saveEdit")?.addEventListener("click",saveEdit);el.editModal?.addEventListener("click",e=>{if(e.target===el.editModal)closeEdit();});el.tracker?.addEventListener("click",e=>{const d=e.target.closest("[data-date]")?.dataset.date;if(d)openTracker(d);});$("#closeTrackerModal")?.addEventListener("click",()=>el.trackerModal.classList.remove("show"));el.trackerModal?.addEventListener("click",e=>{if(e.target===el.trackerModal)el.trackerModal.classList.remove("show");});document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeEdit();el.trackerModal?.classList.remove("show");closeMenus();}});if(el.notes)el.notes.value=read(KEYS.notes,"");el.notes?.addEventListener("input",()=>write(KEYS.notes,el.notes.value));el.notificationBtn?.addEventListener("click",e=>{e.stopPropagation();el.notificationMenu.classList.toggle("show");el.notificationBtn.setAttribute("aria-expanded",String(el.notificationMenu.classList.contains("show")));});el.profileMenuBtn?.addEventListener("click",e=>{e.stopPropagation();el.profileMenu.classList.toggle("show");el.profileMenuBtn.setAttribute("aria-expanded",String(el.profileMenu.classList.contains("show")));});document.addEventListener("click",e=>{if(!e.target.closest(".action-menu-wrap"))closeMenus();});$("#notificationSettingsBtn")?.addEventListener("click",()=>el.notificationBtn.click());$$('[data-export]').forEach(b=>b.addEventListener("click",()=>exportData(b.dataset.export)));$$('.coming-soon').forEach(b=>b.addEventListener("click",()=>alert("Coming soon")));el.welcomeGetStartedBtn?.addEventListener("click",()=>showAuthScreen());el.welcomeGoogleBtn?.addEventListener("click",performGoogleLogin);el.authGoogleBtn?.addEventListener("click",performGoogleLogin);el.authForm?.addEventListener("submit",async(e)=>{e.preventDefault();if(authActionInProgress)return;setAuthError("");authActionInProgress=true;setAuthControlsEnabled(false);const email=el.authEmail.value.trim();const password=el.authPassword.value; if(!email||!password){setAuthError("Email and password are required.");authActionInProgress=false;setAuthControlsEnabled(true);return;} try{ if(authMode===AUTH_MODE.REGISTER){await createUserWithEmailAndPassword(auth,email,password);} else {await signInWithEmailAndPassword(auth,email,password);} }catch(error){handleAuthFailure(error);}finally{authActionInProgress=false;setAuthControlsEnabled(true);} });el.authCreateBtn?.addEventListener("click",()=>setAuthMode(authMode===AUTH_MODE.LOGIN?AUTH_MODE.REGISTER:AUTH_MODE.LOGIN));el.authForgotBtn?.addEventListener("click",async()=>{setAuthError("");const email=el.authEmail.value.trim();if(!email){setAuthError("Enter your email to reset password.");return;}try{await sendPasswordResetEmail(auth,email);setAuthError("Password reset email sent.");}catch(error){setAuthError(error.message);} });el.setupImage?.addEventListener("change",()=>readImage(el.setupImage,v=>{setupImageData=v;el.setupPreview.src=v;}));el.setupForm?.addEventListener("submit",async e=>{e.preventDefault();if(!el.setupName.value.trim()||!el.setupEmail.validity.valid){el.setupError.textContent="Name and a valid email are required.";return;}const currentUser=auth.currentUser; if(!currentUser){el.setupError.textContent="You must sign in before creating a profile.";return;}profile={uid:currentUser.uid,name:el.setupName.value.trim(),age:el.setupAge.value,email:el.setupEmail.value.trim(),image:setupImageData};try{await saveProfileToFirestore(currentUser.uid,profile);}catch(error){console.warn("Profile save failed:", error);write(KEYS.profile,profile);showToast("warning","Profile saved locally. Remote save failed, but you can continue.");el.setupError.textContent=error?.message||"Remote profile save failed. Continuing with local profile.";el.onboarding.classList.add("hide");render();return;}write(KEYS.profile,profile);el.onboarding.classList.add("hide");render();});$("#logoutBtn")?.addEventListener("click",async()=>{await signOut(auth);localStorage.removeItem(KEYS.profile);profile=null;closeMenus();el.onboarding.classList.remove("hide");showOnboarding("welcome");render();});window.addEventListener("resize",()=>{if(!mobile())closeSidebar();});}
   function addHabit(){const name=el.habitInput.value.trim();if(!name){el.habitInput.focus();return;}habits.push(normalize({id:makeId(),name,category:el.habitCategory.value,priority:"High",time:"Anytime",history:{}}));el.habitInput.value="";saveHabits();saveDailyProgress();soundManager.play("addHabit");showToast("success", "Habit Added");render();}
   function bindProfilePhotoControls() { if (profileControlsBound) return; profileControlsBound = true;
     el.profileAvatarButton?.addEventListener("click", () => el.profileImage?.click());
     el.profileImage?.addEventListener("change", (event) => { event.stopImmediatePropagation(); previewProfileImage(); }, true);
-    el.profileForm?.addEventListener("submit", (event) => {
+    el.profileForm?.addEventListener("submit", async (event) => {
       event.stopImmediatePropagation();
       event.preventDefault();
       if (!el.profileForm.checkValidity()) { el.profileForm.reportValidity(); return; }
@@ -111,6 +223,15 @@ document.addEventListener("DOMContentLoaded", () => {
       pendingProfileImage = null;
       if (el.profileImage) el.profileImage.value = "";
       syncProfile(true);
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await saveProfileToFirestore(currentUser.uid, profile);
+        }
+      } catch (error) {
+        console.warn("Profile save failed:", error);
+        showToast("warning", "Profile saved locally. Remote save failed.");
+      }
       setPhotoStatus("Profile saved.", "is-preview");
       soundManager.play("saveProfile");
       showToast("success", "Profile Updated");
@@ -128,6 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function syncNotificationControls() { if (el.notificationEnabled) el.notificationEnabled.checked = settings.enabled; if (el.notificationSound) el.notificationSound.checked = settings.sound; if (el.soundVolume) el.soundVolume.value = settings.volume; if (el.soundVolumeValue) el.soundVolumeValue.textContent = `${settings.volume}%`; if (el.browserNotifications) el.browserNotifications.checked = settings.browser && "Notification" in window && Notification.permission === "granted"; }
   async function setBrowserNotifications(enabled) { if (!enabled) { persistNotificationSettings(); return; } if (!("Notification" in window)) { el.browserNotifications.checked = false; persistNotificationSettings(); showToast("error", "This browser does not support desktop notifications."); return; } let permission = Notification.permission; if (permission === "default") permission = await Notification.requestPermission(); if (permission === "granted") { settings.enabled = true; settings.browser = true; el.notificationEnabled.checked = true; persistNotificationSettings(); syncNotificationControls(); showToast("success", "Notifications Enabled"); soundManager.play("notificationEnabled"); } else { settings.browser = false; el.browserNotifications.checked = false; persistNotificationSettings(); showToast("warning", "No problem — you can enable browser notifications later in your browser settings."); } }
   function bindNotificationControls() { if (notificationControlsBound) return; notificationControlsBound = true; syncNotificationControls(); soundManager.preload(); el.notificationEnabled?.addEventListener("change", event => { event.stopImmediatePropagation(); persistNotificationSettings(); }, true); el.notificationSound?.addEventListener("change", event => { event.stopImmediatePropagation(); persistNotificationSettings(); }, true); el.soundVolume?.addEventListener("input", () => { if (el.soundVolumeValue) el.soundVolumeValue.textContent = `${el.soundVolume.value}%`; persistNotificationSettings(); }); el.browserNotifications?.addEventListener("change", () => setBrowserNotifications(el.browserNotifications.checked)); }
+  onAuthStateChanged(auth, handleAuthStateChange);
   migrateDailyProgress();saveDailyProgress();bind();bindProfilePhotoControls();bindNotificationControls();updateClock();render();startFlow();setInterval(updateClock,1000);
 });
 /* ===============================
