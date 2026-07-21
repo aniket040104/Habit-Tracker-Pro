@@ -125,6 +125,11 @@ document.addEventListener("DOMContentLoaded", () => {
       render();
       return;
     }
+    if (profile && profile.uid === user.uid && profile.name) {
+      el.onboarding.classList.add("hide");
+      render();
+      return;
+    }
     profile = { uid: user.uid, email: user.email || "" };
     write(KEYS.profile, profile);
     showOnboarding("profile");
